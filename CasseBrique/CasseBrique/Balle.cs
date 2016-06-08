@@ -129,8 +129,8 @@ namespace CasseBrique
         public override void Initialize()
         {
             _isLaunched = false;
-            _speed = 0.1f;
-            _direction = this.generateLaunchDirection();
+            _speed = 0.2f;
+            _direction = -Vector2.UnitY;//this.generateLaunchDirection();
             
             base.Initialize();
         }

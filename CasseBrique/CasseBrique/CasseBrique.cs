@@ -152,7 +152,7 @@ namespace CasseBrique
             _coeurTexture = Content.Load<Texture2D>(@"images/coeur");
 
             // Calcul du scale d'affichage des briques afin de les centrer convenablement en fonction de leur nombre :
-            float sizeX = (_windowSize.X - (2 * OFFSET)) / NB_COLONNE_BRIQUE; //_windowSize.Y * 0.4f / NB_LIGNE_BRIQUE
+            float sizeX = (_windowSize.X - (2 * OFFSET)) / NB_COLONNE_BRIQUE;
             _briqueScale = sizeX / _briqueTextures[(int)BriqueColor.Black].Width;
 
             _rebondRaquette = Content.Load<SoundEffect>(@"sons\bounce");
@@ -160,7 +160,7 @@ namespace CasseBrique
             _music = Content.Load<Song>(@"sons\song1-dream");
             MediaPlayer.Play(_music);
             MediaPlayer.IsRepeating = true;
-
+            MediaPlayer.Volume = 0.6f;
             this.GenerateBrickWall();
         }
 
@@ -193,7 +193,7 @@ namespace CasseBrique
                     {
                         this.CheckIfBallOut();
                         this.CheckIfCollisionRaquette();
-                        this.CheckIfCollisionBrique();
+                        this.CheckIfCollisionBrique(gameTime);
                         if (_nbBriques == 0)
                             _menu.IsGamePaused = true;
                     }
@@ -291,6 +291,8 @@ namespace CasseBrique
                 {
                     _menu.IsGamePaused = true;
                     // Fin jeu : "Game over" + Retour menu après petite tempo
+                    //// On réinitialise car c'est possible, mais penser à la faire au bon endroit
+                    //Initialize();
                 }
             }
         }
@@ -314,43 +316,68 @@ namespace CasseBrique
                 //var y = - Math.Sin(radianAngle * Math.PI / 180);
                 //_balle.Direction = new Vector2((float)x, (float)y);
 
+
+                _balle.Direction = CalculateBounceDirection(_balle.Position, _raquette.CollisionRectangle);
                 
-                if (_raquette.RelativePosition(_balle.Position) < 0)
-                    _balle.Direction = new Vector2(-1, -1);
-                else if (_raquette.RelativePosition(_balle.Position) > 0)
-                    _balle.Direction = new Vector2(1, -1);
-                else
-                    _balle.Direction = new Vector2(_balle.Direction.X, -_balle.Direction.Y);
+                //if (_raquette.RelativePosition(_balle.Position) < 0)
+                //    _balle.Direction = new Vector2(-1, -1);
+                //else if (_raquette.RelativePosition(_balle.Position) > 0)
+                //    _balle.Direction = new Vector2(1, -1);
+                //else
+                //    _balle.Direction = new Vector2(_balle.Direction.X, -_balle.Direction.Y);
+
+
                 
                 if (_balle.Speed < Balle.MAX_SPEED)
                     _balle.Speed += 0.03f;
             }
         }
 
-        private void CheckIfCollisionBrique()
+        private void CheckIfCollisionBrique(GameTime gameTime)
         {
+            long collisionTime = 0;
+            bool mutex = true;
+
             Rectangle balleRectangle = new Rectangle((int)_balle.Position.X, (int)_balle.Position.Y, _balle.Texture.Width, _balle.Texture.Height);
             for (int x = 0; x < NB_LIGNE_BRIQUE; x++)
             {
                 for (int y = 0; y < NB_COLONNE_BRIQUE; y++)
                 {
-                    if (!_briques[x, y].Touched)
+                    // Vérification du temps écoulé depuis le dernier impact
+                    // afin de limiter le nombre de collisions simultanées.
+                    // Car les collisions simultanées provoquent un double changement de direction de la balle, 
+                    // soit aucun changement de direction de la balle qui va alors continuer sa trajectoire.
+                    collisionTime = 0;
+                    collisionTime += gameTime.ElapsedGameTime.Milliseconds;
+                    if (mutex && collisionTime < 100)
                     {
-                        //if ((_briques[x, y].CollisionRectangle.Contains((int)_balle.Position.X + _balle.Texture.Width, (int)_balle.Position.Y + _balle.Texture.Height)) // Coin inférieur-droit
-                        //    || (_briques[x, y].CollisionRectangle.Contains((int)_balle.Position.X + _balle.Texture.Width, (int)_balle.Position.Y)) // Coin supérieur-droit
-                        //    || (_briques[x, y].CollisionRectangle.Contains((int)_balle.Position.X, (int)_balle.Position.Y + _balle.Texture.Height)) // Coin inférieur-gauche
-                        //    || (_briques[x, y].CollisionRectangle.Contains((int)_balle.Position.X, (int)_balle.Position.Y))) // Coin supérieur-gauche
-                        //if (_briques[x, y].CollisionRectangle.Intersects(balleRectangle))
-                        //Brique b = _briques[x, y];
-                        if(_balle.CollisionCircle.Intersects(_briques[x, y].CollisionRectangle))
+                        // Si la brique testée n'a pas encore été touchée,
+                        // Alors on teste la collision entre le rectangle de la balle et le rectangle de la brique testée.
+                        if (!_briques[x, y].Touched && _briques[x, y].CollisionRectangle.Intersects(balleRectangle))
                         {
+                            // On produit le son de collision.
                             //_rebondBrique.Play();
-                            _briques[x, y].Touched = true;
-                            _nbBriques--;
-                            _score += _briques[x, y].Score;
+
+                            // On inverse la direction de la balle.
                             _balle.Direction = -_balle.Direction;
+
+                            // On met à jour l'état de la brique pour indiquer qu'elle a été touchée.
+                            _briques[x, y].Touched = true;
+
+                            // On diminue le compteur de briques, 
+                            // ce qui permettra de savoir quand toutes les briques auront été touchées.
+                            _nbBriques--;
+
+                            // On ajoute les points que donne la brique touchée au score du joueur.
+                            _score += _briques[x, y].Score;
+
+                            // On bloque la prochaine collision
+                            // /!\ Ce n'est pas la bonne chose à faire*, à modifier plus tard !
+                            // * En effet, si la balle touche plusieurs briques non simultanément avant de retomber sur la raquette, elle ignorera cette seconde collision...
+                            mutex = false;
                         }
                     }
+                    else mutex = true;
                 }
             }
         }
@@ -377,22 +404,26 @@ namespace CasseBrique
             }
         }
 
-        public bool Intersects(Circle circle, Rectangle rect)
+        private Vector2 CalculateBounceDirection(Vector2 position, Rectangle rectangle)
         {
-            Vector2 circleDistance = new Vector2();
-            circleDistance.X = Math.Abs(circle.Center.X - rect.X);
-            circleDistance.Y = Math.Abs(circle.Center.Y - rect.Y);
+            float distanceAetXballe = position.X - rectangle.X;
+            float distanceAetB = rectangle.Width;
 
-            if (circleDistance.X > (rect.Width / 2 + circle.Radius)) { return false; }
-            if (circleDistance.Y > (rect.Height / 2 + circle.Radius)) { return false; }
+            // Get angle in degrees
+            float ratio = distanceAetXballe / distanceAetB;
+            float angleInDegrees = 180 * ratio;
 
-            if (circleDistance.X <= (rect.Width / 2)) { return true; }
-            if (circleDistance.Y <= (rect.Height / 2)) { return true; }
+            if (angleInDegrees < 20) angleInDegrees = 20;
+            else if (angleInDegrees > 160) angleInDegrees = 160;
 
-            double cornerDistance_sq = (Math.Pow((circleDistance.X - rect.Width / 2), 2) +
-                                 Math.Pow((circleDistance.Y - rect.Height / 2), 2));
+            // Convert degrees to radian :
+            float angleInRadians = MathHelper.ToRadians(angleInDegrees);
 
-            return (cornerDistance_sq <= (Math.Pow(circle.Radius, 2)));
+            // Convert radian to vector2 :
+            return new Vector2(-(float)Math.Cos(angleInRadians), -(float)Math.Sin(angleInRadians));
+
+            // /!\ mauvais ratio => bounce angle entre 20° et 160° mais lorsque la balle 
+            // arrive au moilieu de la raquette elle part dans un angle < 90°...
         }
     }
 }
