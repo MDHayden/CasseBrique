@@ -61,6 +61,7 @@ namespace CasseBrique
         private SpriteFont _scoreFont;
         private SpriteFont _timerFont;
         private SpriteFont _globalFont;
+        private SpriteFont _titleFont;
         //private SpriteFont _gameOverFont;
 
         private int _nbBalles;
@@ -136,6 +137,7 @@ namespace CasseBrique
             _scoreFont = Content.Load<SpriteFont>("ScoreFont");
             _timerFont = Content.Load<SpriteFont>("TimerFont");
             _globalFont = Content.Load<SpriteFont>("ScoreFont");
+            _titleFont = Content.Load<SpriteFont>("TitleFont");
 
             _briqueTextures[(int)BriqueColor.Black] = Content.Load<Texture2D>(@"images/briquenoire");
             _briqueTextures[(int)BriqueColor.Purple] = Content.Load<Texture2D>(@"images/briqueviolet");
@@ -215,7 +217,16 @@ namespace CasseBrique
             switch (CurrentGameState)
             {
                 case GameState.MainMenu:
+                    // Affichage du fond d'écran du menu
                     spriteBatch.Draw(_menuBackground, new Rectangle(0, 0, screenWidth, screenHeight), Color.White);
+
+                    // Affichage du titre du Jeu
+                    String title = "Casse Brique";
+                    Vector2 titleSize = _titleFont.MeasureString(title);
+                    Vector2 titlePosition = new Vector2(_windowSize.X / 2 - titleSize.X / 2, 20);
+                    spriteBatch.DrawString(_titleFont, title, titlePosition, Color.White);
+
+                    // Affichage des boutons
                     _play.Draw(spriteBatch);
                     break;
                 case GameState.Options:
