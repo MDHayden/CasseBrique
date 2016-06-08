@@ -13,7 +13,7 @@
     - 3 balls reserve (done).
     - End of the game :
         - "Game over" (done).
-        - Back to menu.
+        - Back to menu after a delay of about 3 seconds.
         - Initialize a new game when clicking "Play" again.
     - Collision between ball and bricks (in progress).
     - Ball bounce angle on the racquet (has serious issues...)
