@@ -24,3 +24,7 @@ Left to do :
 - Ball and bricks correction.
 - End of game.
 - Menu to finish.
+
+Potential improvement :
+- Brick level : define number of collisions necessary to make the brick disappear
+- Combos : give extra points if several collisions are done before the ball hit the racquet
