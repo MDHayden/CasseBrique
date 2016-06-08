@@ -156,7 +156,8 @@ namespace CasseBrique
             _briqueScale = sizeX / _briqueTextures[(int)BriqueColor.Black].Width;
 
             _rebondRaquette = Content.Load<SoundEffect>(@"sons\bounce");
-            //_rebondBrique = Content.Load<SoundEffect>(@"sons\rebond-terre_battue");
+            _rebondBrique = Content.Load<SoundEffect>(@"sons\rebond-brique");
+
             _music = Content.Load<Song>(@"sons\song1-dream");
             MediaPlayer.Play(_music);
             MediaPlayer.IsRepeating = true;
@@ -225,8 +226,6 @@ namespace CasseBrique
 
                     // On dessine ensuite le score en calculant au préalable la position où le placer.
                     Vector2 scoreSize = _scoreFont.MeasureString("Score : " + _score.ToString());
-                    //Vector2 scorePosition = new Vector2(10, _windowSize.Y - _coeurTexture.Height - 10 - scoreSize.Y);
-                    //Vector2 scorePosition = new Vector2(_windowSize.X / 2 - scoreSize.X / 2, 10);
                     Vector2 scorePosition = new Vector2(_windowSize.X - scoreSize.X - 10, _windowSize.Y - _coeurTexture.Height - 10 - scoreSize.Y);
                     spriteBatch.DrawString(_scoreFont, "Score : " + _score.ToString(), scorePosition, Color.White);
 
@@ -356,7 +355,7 @@ namespace CasseBrique
                         if (!_briques[x, y].Touched && _briques[x, y].CollisionRectangle.Intersects(balleRectangle))
                         {
                             // On produit le son de collision.
-                            //_rebondBrique.Play();
+                            _rebondBrique.Play();
 
                             // On inverse la direction de la balle.
                             _balle.Direction = -_balle.Direction;
