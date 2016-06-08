@@ -12,6 +12,59 @@ using Microsoft.Xna.Framework.Media;
 
 namespace CasseBrique
 {
+    public struct Circle
+    {
+        private Vector2 _center;
+        private float _radius;
+
+        public Vector2 Center {
+            get { return _center; }
+            set { _center = value; } 
+        }
+        public float Radius {
+            get { return _radius; }
+            set { _radius = value; }
+        }
+
+        public Circle(Vector2 center, float radius)
+        {
+            _center = center;
+            _radius = radius;
+        }
+
+        public bool Contains(Vector2 point)
+        {
+            // "Wordy" version
+            Vector2 relativePosition = point - Center;
+            float distanceBetweenPoints = relativePosition.Length();
+            if (distanceBetweenPoints <= Radius) { return true; }
+            else { return false; }
+            // Concise version
+            //return ((point - Center).Length() <= Radius);
+        }
+
+        public bool Intersects(Circle other)
+        {
+            // "Wordy" version
+            Vector2 relativePosition = other.Center - this.Center;
+            float distanceBetweenCenters = relativePosition.Length();
+            if (distanceBetweenCenters <= this.Radius + other.Radius) { return true; }
+            else { return false; }
+            //return ((other.Center - Center).Length() < (other.Radius - Radius)); // Concise version
+        }
+
+        public bool Intersects(Rectangle rectangle)
+        {
+            Vector2 v = new Vector2(MathHelper.Clamp(_center.X, rectangle.Left, rectangle.Right),
+                                    MathHelper.Clamp(_center.Y, rectangle.Top, rectangle.Bottom));
+
+            Vector2 direction = _center - v;
+            float distanceSquared = direction.LengthSquared();
+
+            return ((distanceSquared > 0) && (distanceSquared < _radius * _radius));
+        }
+    }
+
     class Balle : Microsoft.Xna.Framework.DrawableGameComponent
     {
         private SpriteBatch _spriteBatch;
@@ -56,6 +109,15 @@ namespace CasseBrique
         }
         private bool _isLaunched;
 
+        public Circle CollisionCircle
+        {
+            get
+            {
+                return _circle;
+            }
+        }
+        private Circle _circle;
+
         public Balle(Game game, Vector2 windowSize/*, SpriteBatch spriteBatch*/)
             : base(game)
         {
@@ -77,6 +139,14 @@ namespace CasseBrique
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             _texture = Game.Content.Load<Texture2D>(@"images\balle-bleu");
+
+            _circle = new Circle(
+                new Vector2(
+                    _position.X + _texture.Width / 2,
+                    _position.Y + _texture.Height / 2
+                ),
+                _texture.Width / 2
+            );
 
             base.LoadContent();
         }
@@ -104,7 +174,8 @@ namespace CasseBrique
 
                     _position += _direction * _speed * (float)gameTime.ElapsedGameTime.TotalMilliseconds;
                 }
-
+                _circle.Center = new Vector2(_position.X + _texture.Width / 2,
+                    _position.Y + _texture.Height / 2);
                 base.Update(gameTime);
             }
         }

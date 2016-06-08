@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
+using System.Windows;
 
 namespace CasseBrique
 {
@@ -25,7 +26,6 @@ namespace CasseBrique
         private const int NB_LIGNE_BRIQUE = 4;
         private const int NB_COLONNE_BRIQUE = 10;
         private const int OFFSET = 25; // Offset entre les lignes et colonnes de briques
-        private const int X_SIZE_BRIQUE = 119;
         private float _briqueScale;
 
         // Unitiliser une enumération ici :
@@ -45,7 +45,8 @@ namespace CasseBrique
             Black2
         }
 
-        public static Texture2D[] _briqueTextures = new Texture2D[20]; // Taille arbitraire
+        public Texture2D[] _briqueTextures = new Texture2D[20]; // Taille arbitraire
+        private Texture2D _coeurTexture;
 
         private int _nbBriques = NB_LIGNE_BRIQUE * NB_COLONNE_BRIQUE;
 
@@ -148,6 +149,7 @@ namespace CasseBrique
             _briqueTextures[(int)BriqueColor.Milk] = Content.Load<Texture2D>(@"images/briquelait");
             _briqueTextures[(int)BriqueColor.Menthe] = Content.Load<Texture2D>(@"images/brique_menthe");
             _briqueTextures[(int)BriqueColor.Black2] = Content.Load<Texture2D>(@"images/brique_noire");
+            _coeurTexture = Content.Load<Texture2D>(@"images/coeur");
 
             // Calcul du scale d'affichage des briques afin de les centrer convenablement en fonction de leur nombre :
             float sizeX = (_windowSize.X - (2 * OFFSET)) / NB_COLONNE_BRIQUE; //_windowSize.Y * 0.4f / NB_LIGNE_BRIQUE
@@ -208,7 +210,6 @@ namespace CasseBrique
         {            
             GraphicsDevice.Clear(Color.Black); // CornflowerBlue
             
-            
             spriteBatch.Begin();
             switch (CurrentGameState)
             {
@@ -219,11 +220,14 @@ namespace CasseBrique
                 case GameState.Options:
                     break;
                 case GameState.Playing:
-                    spriteBatch.Draw(_background, _mainFrame, Color.CornflowerBlue);
+                    // Affichage du fond d'écran
+                    spriteBatch.Draw(_background, _mainFrame, Color.White);
 
                     // On dessine ensuite le score en calculant au préalable la position où le placer.
-                    Vector2 scoreSize = _scoreFont.MeasureString(_score.ToString());
-                    Vector2 scorePosition = new Vector2(10, _windowSize.Y - 10 - scoreSize.Y);
+                    Vector2 scoreSize = _scoreFont.MeasureString("Score : " + _score.ToString());
+                    //Vector2 scorePosition = new Vector2(10, _windowSize.Y - _coeurTexture.Height - 10 - scoreSize.Y);
+                    //Vector2 scorePosition = new Vector2(_windowSize.X / 2 - scoreSize.X / 2, 10);
+                    Vector2 scorePosition = new Vector2(_windowSize.X - scoreSize.X - 10, _windowSize.Y - _coeurTexture.Height - 10 - scoreSize.Y);
                     spriteBatch.DrawString(_scoreFont, "Score : " + _score.ToString(), scorePosition, Color.White);
 
                     // Affichage du mur de briques
@@ -237,6 +241,14 @@ namespace CasseBrique
                                 spriteBatch.Draw(_briqueTextures[brique.Color], brique.Position, null, Color.White, 0f, Vector2.Zero, _briqueScale, SpriteEffects.None, 0f);
                             }
                         }
+                    }
+
+                    // Dessin des vies restantes :
+                    int xCoeur = (int)_windowSize.X - _coeurTexture.Width - 10;
+                    for (int i = 0; i < _nbBalles; i++)
+                    {
+                        spriteBatch.Draw(_coeurTexture, new Rectangle(xCoeur, (int)_windowSize.Y - _coeurTexture.Height - 10, _coeurTexture.Width, _coeurTexture.Height), Color.White);
+                        xCoeur -= 10 + _coeurTexture.Width;
                     }
 
                     // Game Over
@@ -290,21 +302,26 @@ namespace CasseBrique
             {
                 _rebondRaquette.Play();
 
-                _raquette.Scale -= 0.005f;
-                float radianAngle = (float)Math.Atan2(-_balle.Direction.X, -_balle.Direction.Y) * (180 / (float)Math.PI);
-                //_balle.Direction = new Vector2((float)Math.Cos(radianAngle), (float)Math.Sin(radianAngle));                
+                //_raquette.Scale -= 0.005f;
+                //Vector vectorRaquette = new Vector(_raquette.CollisionRectangle.X, _raquette.CollisionRectangle.Y);
+                //Vector vectorBalle = new Vector(_balle.Direction.X, _balle.Direction.Y);
+                //Double angleBetween = Vector.AngleBetween(vectorRaquette, vectorBalle);
 
-                var x = Math.Cos(radianAngle * Math.PI / 180);
-                var y = - Math.Sin(radianAngle * Math.PI / 180);
-                _balle.Direction = new Vector2((float)x, (float)y);
-                /*
+                //float radianAngle = (float)Math.Atan2(-_balle.Direction.X, -_balle.Direction.Y) * (180 / (float)Math.PI);
+                ////_balle.Direction = new Vector2((float)Math.Cos(radianAngle), (float)Math.Sin(radianAngle));
+
+                //var x = Math.Cos(radianAngle * Math.PI / 180);
+                //var y = - Math.Sin(radianAngle * Math.PI / 180);
+                //_balle.Direction = new Vector2((float)x, (float)y);
+
+                
                 if (_raquette.RelativePosition(_balle.Position) < 0)
                     _balle.Direction = new Vector2(-1, -1);
                 else if (_raquette.RelativePosition(_balle.Position) > 0)
                     _balle.Direction = new Vector2(1, -1);
                 else
                     _balle.Direction = new Vector2(_balle.Direction.X, -_balle.Direction.Y);
-                */
+                
                 if (_balle.Speed < Balle.MAX_SPEED)
                     _balle.Speed += 0.03f;
             }
@@ -323,7 +340,9 @@ namespace CasseBrique
                         //    || (_briques[x, y].CollisionRectangle.Contains((int)_balle.Position.X + _balle.Texture.Width, (int)_balle.Position.Y)) // Coin supérieur-droit
                         //    || (_briques[x, y].CollisionRectangle.Contains((int)_balle.Position.X, (int)_balle.Position.Y + _balle.Texture.Height)) // Coin inférieur-gauche
                         //    || (_briques[x, y].CollisionRectangle.Contains((int)_balle.Position.X, (int)_balle.Position.Y))) // Coin supérieur-gauche
-                        if (_briques[x, y].CollisionRectangle.Intersects(balleRectangle))
+                        //if (_briques[x, y].CollisionRectangle.Intersects(balleRectangle))
+                        //Brique b = _briques[x, y];
+                        if(_balle.CollisionCircle.Intersects(_briques[x, y].CollisionRectangle))
                         {
                             //_rebondBrique.Play();
                             _briques[x, y].Touched = true;
@@ -358,12 +377,22 @@ namespace CasseBrique
             }
         }
 
-        //private void InitGame()
-        //{
-        //    _nbBalles = 3;
-        //    _score = 0;
-        //    _balle = new Balle(this, _windowSize);
-        //    _raquette = new Raquette(this, _windowSize);
-        //}
+        public bool Intersects(Circle circle, Rectangle rect)
+        {
+            Vector2 circleDistance = new Vector2();
+            circleDistance.X = Math.Abs(circle.Center.X - rect.X);
+            circleDistance.Y = Math.Abs(circle.Center.Y - rect.Y);
+
+            if (circleDistance.X > (rect.Width / 2 + circle.Radius)) { return false; }
+            if (circleDistance.Y > (rect.Height / 2 + circle.Radius)) { return false; }
+
+            if (circleDistance.X <= (rect.Width / 2)) { return true; }
+            if (circleDistance.Y <= (rect.Height / 2)) { return true; }
+
+            double cornerDistance_sq = (Math.Pow((circleDistance.X - rect.Width / 2), 2) +
+                                 Math.Pow((circleDistance.Y - rect.Height / 2), 2));
+
+            return (cornerDistance_sq <= (Math.Pow(circle.Radius, 2)));
+        }
     }
 }
