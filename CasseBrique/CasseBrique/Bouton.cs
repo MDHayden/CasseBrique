@@ -10,29 +10,45 @@ namespace CasseBrique
 {
     class Bouton
     {
-        
-        private Color _color = new Color(255, 255, 255, 255);
+     
+        public Color Color
+        {
+            get { return _color; }
+        }
+        private Color _color;
 
+        public Texture2D Texture
+        {
+            get { return _texture; }
+        }
         private Texture2D _texture;
+
+        public Vector2 Position
+        {
+            get { return _position; }
+            set { _position = value; }
+        }
         private Vector2 _position;
+
+        public Rectangle Rectangle
+        {
+            get { return _rectangle; }
+        }
         private Rectangle _rectangle;
 
         private bool down;
         public bool isClicked;
 
-        public Bouton(Texture2D texture, GraphicsDevice graphics)
+        public Bouton(Texture2D texture, Vector2 position)
         {
             _texture = texture;
-
-            Vector2 windowSize = new Vector2(graphics.Viewport.Width, graphics.Viewport.Height);
-            //_size = new Vector2(windowSize.X / 8, windowSize.Y / 30);
-            _position = new Vector2(windowSize.X / 2 - _texture.Width / 2, windowSize.Y / 3 - _texture.Height);
+            _position = position;
+            _color = new Color(255, 255, 255, 255);
+            _rectangle = new Rectangle((int)_position.X, (int)_position.Y, _texture.Width, _texture.Height);
         }
 
         public void Update(MouseState mouseState)
         {
-            _rectangle = new Rectangle((int)_position.X, (int)_position.Y, _texture.Width, _texture.Height);
-
             Rectangle mouseRectangle = new Rectangle(mouseState.X, mouseState.Y, 1, 1);
             if(mouseRectangle.Intersects(_rectangle))
             {
@@ -48,9 +64,9 @@ namespace CasseBrique
             }
         }
 
-        public void Draw(SpriteBatch spriteBatch)
-        {
-            spriteBatch.Draw(_texture, _rectangle, null, _color);
-        }        
+        //public void Draw(SpriteBatch spriteBatch)
+        //{
+        //    spriteBatch.Draw(_texture, _rectangle, null, _color);
+        //}        
     }
 }

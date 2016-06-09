@@ -89,6 +89,8 @@ namespace CasseBrique
         public GameState CurrentGameState = GameState.MainMenu;
 
         private Bouton _play;
+        private Bouton _options;
+        private Bouton _exit;
 
         public CasseBrique()
         {
@@ -131,7 +133,13 @@ namespace CasseBrique
             _menuBackground = Content.Load<Texture2D>(@"images/fondmenu");
 
             // Boutons menu
-            _play = new Bouton(Content.Load<Texture2D>(@"images/play"), graphics.GraphicsDevice);
+            Texture2D playTexture = Content.Load<Texture2D>(@"images/play");
+            Texture2D optionsTexture = Content.Load<Texture2D>(@"images/options");
+            Texture2D exitTexture = Content.Load<Texture2D>(@"images/exit");
+            _play = new Bouton(playTexture, new Vector2(_windowSize.X / 2 - playTexture.Width / 2, 150));
+            _options = new Bouton(optionsTexture, new Vector2(_windowSize.X / 2 - optionsTexture.Width / 2, 300));
+            _exit = new Bouton(exitTexture, new Vector2(_windowSize.X / 2 - exitTexture.Width / 2, 450));
+            // /!\ La gestion de ces boutons n'est pas bonne...
 
             // TODO: use this.Content to load your game content here
             _scoreFont = Content.Load<SpriteFont>("ScoreFont");
@@ -176,8 +184,14 @@ namespace CasseBrique
                 case GameState.MainMenu:
                     MouseState mouseState = Mouse.GetState();
                     if (_play.isClicked == true) CurrentGameState = GameState.Playing;
+                    if (_exit.isClicked == true) Exit();
+                    if (_options.isClicked == true) CurrentGameState = GameState.Options;
                     if (IsMouseVisible == false) IsMouseVisible = true;
+
+                    // Mise à jour de la couleur des boutons si MouseOver
                     _play.Update(mouseState);
+                    _options.Update(mouseState);
+                    _exit.Update(mouseState);
                     break;
                 case GameState.Options:
                     break;
@@ -227,9 +241,16 @@ namespace CasseBrique
                     spriteBatch.DrawString(_titleFont, title, titlePosition, Color.White);
 
                     // Affichage des boutons
-                    _play.Draw(spriteBatch);
+                    spriteBatch.Draw(_play.Texture, _play.Rectangle, _play.Color);
+                    spriteBatch.Draw(_options.Texture, _options.Rectangle, _options.Color);
+                    spriteBatch.Draw(_exit.Texture, _exit.Rectangle, _exit.Color);
                     break;
                 case GameState.Options:
+                    // Affichage du titre du menu
+                    String menuTitle = "Options";
+                    Vector2 menuTitleSize = _titleFont.MeasureString(menuTitle);
+                    Vector2 menuTitlePosition = new Vector2(_windowSize.X / 2 - menuTitleSize.X / 2, 20);
+                    spriteBatch.DrawString(_titleFont, menuTitle, menuTitlePosition, Color.White);
                     break;
                 case GameState.Playing:
                     // Affichage du fond d'écran
