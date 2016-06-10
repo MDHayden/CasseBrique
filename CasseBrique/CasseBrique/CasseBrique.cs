@@ -246,6 +246,9 @@ namespace CasseBrique
                     spriteBatch.Draw(_exit.Texture, _exit.Rectangle, _exit.Color);
                     break;
                 case GameState.Options:
+                    // Affichage du fond d'écran du menu
+                    spriteBatch.Draw(_menuBackground, new Rectangle(0, 0, screenWidth, screenHeight), Color.White);
+
                     // Affichage du titre du menu
                     String menuTitle = "Options";
                     Vector2 menuTitleSize = _titleFont.MeasureString(menuTitle);
