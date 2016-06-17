@@ -17,12 +17,10 @@
         - Back to menu after the player hit "Enter".
         - Initialize a new game when clicking "Play" again.
     - Collision between ball and bricks (done).
-    - Ball bounce angle on the racquet (has minor issues...)
+    - Ball bounce angle on the racquet (has minor issues).
 
 
 - Left to do :
-    - Ball bounce angle.
-    - Ball and bricks correction.
     - End of game.
     - Menu to finish.
     - Back to main menu when the player hit "Escape" in menu Options.
