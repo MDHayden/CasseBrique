@@ -87,6 +87,9 @@ namespace CasseBrique
         private Bouton _options;
         private Bouton _exit;
 
+        KeyboardState _keyboardState,
+                      _keyboardPreviousState;
+
         public CasseBrique()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -120,6 +123,7 @@ namespace CasseBrique
         {
             // Affichage de la souris sur l'écran de menu
             IsMouseVisible = true;
+            _nbBriques = NB_LIGNE_BRIQUE * NB_COLONNE_BRIQUE;
             _nbBalles = 3;
             _score = 0;
 
@@ -184,7 +188,7 @@ namespace CasseBrique
 
         protected override void Update(GameTime gameTime)
         {
-            KeyboardState _keyboardState = Keyboard.GetState();
+            _keyboardState = Keyboard.GetState();
 
             switch(CurrentGameState)
             {
@@ -207,20 +211,20 @@ namespace CasseBrique
                     //if (_keyboardState.IsKeyDown(Keys.Escape)) Exit();
                     break;
                 case GameState.Options:
-                    if (_keyboardState.IsKeyDown(Keys.Escape)) CurrentGameState = GameState.MainMenu;
+                    if (_keyboardState.IsKeyDown(Keys.Escape) && _keyboardPreviousState.IsKeyUp(Keys.Escape)) CurrentGameState = GameState.MainMenu;
                     break;
                 case GameState.Playing:
                     // Si la sourie est visible, la cacher
                     if (IsMouseVisible == true) IsMouseVisible = false;
 
                     // Return to menu
-                    if (_keyboardState.IsKeyDown(Keys.Escape)) CurrentGameState = GameState.MainMenu; //CurrentGameState = GameState.Paused;
+                    if (_keyboardState.IsKeyDown(Keys.Escape) && _keyboardPreviousState.IsKeyUp(Keys.Escape)) CurrentGameState = GameState.MainMenu; //CurrentGameState = GameState.Paused;
 
                     // Partie finie (PERDUE ou GAGNEE)
                     if (_nbBalles == 0 || _nbBriques == 0)
                     {
                         // Retour au menu si Entrée
-                        if (_keyboardState.IsKeyDown(Keys.Enter))
+                        if (_keyboardState.IsKeyDown(Keys.Enter) && _keyboardPreviousState.IsKeyUp(Keys.Enter))
                         {
                             //MediaPlayer.Stop();
                             this.InitGame();
@@ -228,7 +232,7 @@ namespace CasseBrique
                         }
                     } else if (!_balle.Launched) {
                         _balle.Position = new Vector2(_raquette.CollisionRectangle.X + _raquette.CollisionRectangle.Width / 2 - _balle.Texture.Width / 2, _raquette.Position.Y - _balle.Texture.Height);
-                        if(_keyboardState.IsKeyDown(Keys.Space))
+                        if (_keyboardState.IsKeyDown(Keys.Space) && _keyboardPreviousState.IsKeyUp(Keys.Space))
                         {
                             _balle.Launched = true;
                         }
@@ -241,6 +245,7 @@ namespace CasseBrique
                     }
                     break;
             }
+            _keyboardPreviousState = _keyboardState;
 
             base.Update(gameTime);
         }
