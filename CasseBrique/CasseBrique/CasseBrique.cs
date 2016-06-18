@@ -123,8 +123,8 @@ namespace CasseBrique
             _nbBalles = 3;
             _score = 0;
 
-            _balle.Initialize();
             _raquette.Initialize();
+            _balle.Initialize();
 
             this.GenerateBrickWall();
         }
@@ -178,6 +178,7 @@ namespace CasseBrique
             _music = Content.Load<Song>(@"sons\song1-dream");
             MediaPlayer.IsRepeating = true;
             MediaPlayer.Volume = 0.6f;
+            MediaPlayer.Play(_music);
             this.GenerateBrickWall();
         }
 
@@ -199,21 +200,21 @@ namespace CasseBrique
                     if (_play.isClicked == true)
                     {
                         CurrentGameState = GameState.Playing;
-                        MediaPlayer.Play(_music);
+                        //MediaPlayer.Play(_music);
                     }
                     if (_exit.isClicked == true) Exit();
                     if (_options.isClicked == true) CurrentGameState = GameState.Options;
+                    //if (_keyboardState.IsKeyDown(Keys.Escape)) Exit();
                     break;
                 case GameState.Options:
-                    if (_keyboardState.IsKeyDown(Keys.Enter))
-                        CurrentGameState = GameState.MainMenu;
+                    if (_keyboardState.IsKeyDown(Keys.Escape)) CurrentGameState = GameState.MainMenu;
                     break;
                 case GameState.Playing:
                     // Si la sourie est visible, la cacher
                     if (IsMouseVisible == true) IsMouseVisible = false;
 
-                    // Quit the application
-                    if (_keyboardState.IsKeyDown(Keys.Escape)) Exit(); //CurrentGameState = GameState.Paused;
+                    // Return to menu
+                    if (_keyboardState.IsKeyDown(Keys.Escape)) CurrentGameState = GameState.MainMenu; //CurrentGameState = GameState.Paused;
 
                     // Partie finie (PERDUE ou GAGNEE)
                     if (_nbBalles == 0 || _nbBriques == 0)
@@ -221,13 +222,12 @@ namespace CasseBrique
                         // Retour au menu si Entrée
                         if (_keyboardState.IsKeyDown(Keys.Enter))
                         {
-                            MediaPlayer.Stop();
-                            CurrentGameState = GameState.MainMenu;
+                            //MediaPlayer.Stop();
                             this.InitGame();
+                            CurrentGameState = GameState.MainMenu;
                         }
                     } else if (!_balle.Launched) {
-                        _raquette.Scale = 1f;
-                        _balle.Position = new Vector2(_raquette.Position.X + _raquette.Texture.Width / 2 - _balle.Texture.Width / 2, _raquette.Position.Y - _balle.Texture.Height);
+                        _balle.Position = new Vector2(_raquette.CollisionRectangle.X + _raquette.CollisionRectangle.Width / 2 - _balle.Texture.Width / 2, _raquette.Position.Y - _balle.Texture.Height);
                         if(_keyboardState.IsKeyDown(Keys.Space))
                         {
                             _balle.Launched = true;
@@ -277,7 +277,7 @@ namespace CasseBrique
                     Vector2 menuTitlePosition = new Vector2(_windowSize.X / 2 - menuTitleSize.X / 2, 20);
                     spriteBatch.DrawString(_titleFont, menuTitle, menuTitlePosition, Color.White);
 
-                    this.DrawString("Appuyez sur \"Entrer\" pour revenir au menu", _globalFont, new Vector2(_windowSize.X / 2, _windowSize.Y - 40), Color.Black);
+                    this.DrawString("Appuyez sur \"Echap\" pour revenir au menu", _globalFont, new Vector2(_windowSize.X / 2, _windowSize.Y - 40), Color.Black);
                     break;
                 case GameState.Playing:
                     // Affichage du fond d'écran
@@ -312,12 +312,12 @@ namespace CasseBrique
                     // Game Over
                     if (_nbBalles == 0) {
                         this.DrawString("Game Over", _titleFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2), Color.Red);
-                        this.DrawString("Appuyez sur \"Entrer\" pour revenir au menu", _globalFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2 + 50), Color.Black);
+                        this.DrawString("Appuyez sur \"Enter\" pour revenir au menu", _globalFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2 + 50), Color.Black);
                     }
                     // Partie Gagnée
                     else if (_nbBriques == 0) {
                         this.DrawString("Niveau terminé", _titleFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2), Color.Green);
-                        this.DrawString("Appuyez sur \"Entrer\" pour revenir au menu", _globalFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2 + 50), Color.Black);
+                        this.DrawString("Appuyez sur \"Enter\" pour revenir au menu", _globalFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2 + 50), Color.Black);
                     }
                     break;
             }
@@ -337,7 +337,11 @@ namespace CasseBrique
                 {
                     _score -= 50;
                     _balle.Initialize();
+
+                    // Réinitialise la raquette et diminue sa taille
+                    float scale = _raquette.Scale;
                     _raquette.Initialize();
+                    _raquette.Scale = scale - 0.15f;
                 }
             }
         }
