@@ -29,6 +29,7 @@ namespace CasseBrique
         public Vector2 Position
         {
             get { return _position; }
+            set { _position = value; }
         }
         private Vector2 _position;
 
@@ -67,7 +68,7 @@ namespace CasseBrique
         public override void Initialize()
         {
             _scale = 1f;
-            base.Initialize();             
+            base.Initialize();
         }
 
         protected override void LoadContent()
@@ -81,7 +82,7 @@ namespace CasseBrique
 
         public override void Update(GameTime gameTime)
         {
-            if (((CasseBrique)Game).CurrentGameState == CasseBrique.GameState.Playing)
+            if (((CasseBrique)Game)._currentGameState == CasseBrique.GameState.Playing)
             {
                 this.HandleInput();
 
@@ -115,7 +116,7 @@ namespace CasseBrique
 
         public override void Draw(GameTime gameTime)
         {
-            if (((CasseBrique)Game).CurrentGameState == CasseBrique.GameState.Playing)
+            if (((CasseBrique)Game)._currentGameState == CasseBrique.GameState.Playing)
             {
                 _spriteBatch.Begin();
                 _spriteBatch.Draw(_texture, _position, null, Color.White * 1.0f, 0f, Vector2.Zero, _scale, SpriteEffects.None, 0f);

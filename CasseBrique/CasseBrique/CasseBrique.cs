@@ -81,7 +81,7 @@ namespace CasseBrique
             Playing,
             //Paused
         }
-        public GameState CurrentGameState = GameState.MainMenu;
+        public GameState _currentGameState = GameState.MainMenu;
 
         private Bouton _play;
         private Bouton _options;
@@ -121,16 +121,19 @@ namespace CasseBrique
 
         private void InitGame()
         {
-            // Affichage de la souris sur l'écran de menu
-            IsMouseVisible = true;
             _nbBriques = NB_LIGNE_BRIQUE * NB_COLONNE_BRIQUE;
             _nbBalles = 3;
             _score = 0;
 
             _raquette.Initialize();
+            _raquette.Position = new Vector2(_windowSize.X / 2 - (_raquette.Texture.Width * _raquette.Scale / 2), _windowSize.Y - 10 - _raquette.Texture.Height);
+
             _balle.Initialize();
 
             this.GenerateBrickWall();
+
+            IsMouseVisible = true;
+            _currentGameState = GameState.MainMenu;
         }
 
         protected override void LoadContent()
@@ -190,7 +193,7 @@ namespace CasseBrique
         {
             _keyboardState = Keyboard.GetState();
 
-            switch(CurrentGameState)
+            switch(_currentGameState)
             {
                 case GameState.MainMenu:
                     MouseState mouseState = Mouse.GetState();
@@ -203,22 +206,27 @@ namespace CasseBrique
 
                     if (_play.isClicked == true)
                     {
-                        CurrentGameState = GameState.Playing;
-                        //MediaPlayer.Play(_music);
+                        _currentGameState = GameState.Playing;
                     }
                     if (_exit.isClicked == true) Exit();
-                    if (_options.isClicked == true) CurrentGameState = GameState.Options;
-                    //if (_keyboardState.IsKeyDown(Keys.Escape)) Exit();
+                    if (_options.isClicked == true) _currentGameState = GameState.Options;
+                    if (_keyboardState.IsKeyDown(Keys.Escape) && _keyboardPreviousState.IsKeyUp(Keys.Escape)) Exit();
                     break;
                 case GameState.Options:
-                    if (_keyboardState.IsKeyDown(Keys.Escape) && _keyboardPreviousState.IsKeyUp(Keys.Escape)) CurrentGameState = GameState.MainMenu;
+                    if (_keyboardState.IsKeyDown(Keys.Escape) && _keyboardPreviousState.IsKeyUp(Keys.Escape))
+                    {
+                        _currentGameState = GameState.MainMenu;
+                    }
                     break;
                 case GameState.Playing:
-                    // Si la sourie est visible, la cacher
+                    // Si la souris est visible, la cacher
                     if (IsMouseVisible == true) IsMouseVisible = false;
 
                     // Return to menu
-                    if (_keyboardState.IsKeyDown(Keys.Escape) && _keyboardPreviousState.IsKeyUp(Keys.Escape)) CurrentGameState = GameState.MainMenu; //CurrentGameState = GameState.Paused;
+                    if (_keyboardState.IsKeyDown(Keys.Escape) && _keyboardPreviousState.IsKeyUp(Keys.Escape))
+                    {
+                        this.InitGame();
+                    }
 
                     // Partie finie (PERDUE ou GAGNEE)
                     if (_nbBalles == 0 || _nbBriques == 0)
@@ -226,17 +234,18 @@ namespace CasseBrique
                         // Retour au menu si Entrée
                         if (_keyboardState.IsKeyDown(Keys.Enter) && _keyboardPreviousState.IsKeyUp(Keys.Enter))
                         {
-                            //MediaPlayer.Stop();
                             this.InitGame();
-                            CurrentGameState = GameState.MainMenu;
                         }
-                    } else if (!_balle.Launched) {
+                    }
+                    // Si la balle n'est pas encore lancée
+                    else if (!_balle.Launched) {
                         _balle.Position = new Vector2(_raquette.CollisionRectangle.X + _raquette.CollisionRectangle.Width / 2 - _balle.Texture.Width / 2, _raquette.Position.Y - _balle.Texture.Height);
                         if (_keyboardState.IsKeyDown(Keys.Space) && _keyboardPreviousState.IsKeyUp(Keys.Space))
                         {
                             _balle.Launched = true;
                         }
                     }
+                    // Si la balle est lancée
                     else
                     {
                         this.CheckIfBallOut();
@@ -255,7 +264,7 @@ namespace CasseBrique
             GraphicsDevice.Clear(Color.Black); // CornflowerBlue
             
             spriteBatch.Begin();
-            switch (CurrentGameState)
+            switch (_currentGameState)
             {
                 case GameState.MainMenu:
                     // Affichage du fond d'écran du menu
@@ -317,12 +326,12 @@ namespace CasseBrique
                     // Game Over
                     if (_nbBalles == 0) {
                         this.DrawString("Game Over", _titleFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2), Color.Red);
-                        this.DrawString("Appuyez sur \"Enter\" pour revenir au menu", _globalFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2 + 50), Color.Black);
+                        this.DrawString("Appuyez sur \"Echap\" pour revenir au menu", _globalFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2 + 50), Color.Black);
                     }
                     // Partie Gagnée
                     else if (_nbBriques == 0) {
                         this.DrawString("Niveau terminé", _titleFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2), Color.Green);
-                        this.DrawString("Appuyez sur \"Enter\" pour revenir au menu", _globalFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2 + 50), Color.Black);
+                        this.DrawString("Appuyez sur \"Echap\" pour revenir au menu", _globalFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2 + 50), Color.Black);
                     }
                     break;
             }
@@ -335,12 +344,12 @@ namespace CasseBrique
         {
             if (_balle.Position.Y >= _windowSize.Y)
             {
+                _score -= 50;
                 _nbBalles--;
                 _balle.Launched = false;
                 // S'il reste des balles, on réinitialise la balle
                 if(_nbBalles != 0)
                 {
-                    _score -= 50;
                     _balle.Initialize();
 
                     // Réinitialise la raquette et diminue sa taille
@@ -357,8 +366,6 @@ namespace CasseBrique
             if(_balle.Direction.Y > 0 && _raquette.CollisionRectangle.Contains((int)_balle.Position.X, (int)_balle.Position.Y + _balle.Texture.Height))
             {
                 _rebondRaquette.Play();
-
-                //_raquette.Scale -= 0.005f;
 
                 _balle.Direction = CalculateBounceDirection(_balle.Position, _raquette.CollisionRectangle);
                 

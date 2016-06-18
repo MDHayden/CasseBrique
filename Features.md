@@ -22,7 +22,7 @@
 
 
 - Left to do :
-    - Correct Menu Options Escape bug
+    - Correct global exit shorcuts (MAJOR ISSUE)
 
 - Potential improvement :
     - Brick level : define number of collisions necessary to make the brick disappear.

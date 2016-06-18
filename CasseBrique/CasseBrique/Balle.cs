@@ -12,59 +12,6 @@ using Microsoft.Xna.Framework.Media;
 
 namespace CasseBrique
 {
-    public struct Circle
-    {
-        private Vector2 _center;
-        private float _radius;
-
-        public Vector2 Center {
-            get { return _center; }
-            set { _center = value; } 
-        }
-        public float Radius {
-            get { return _radius; }
-            set { _radius = value; }
-        }
-
-        public Circle(Vector2 center, float radius)
-        {
-            _center = center;
-            _radius = radius;
-        }
-
-        public bool Contains(Vector2 point)
-        {
-            // "Wordy" version
-            Vector2 relativePosition = point - Center;
-            float distanceBetweenPoints = relativePosition.Length();
-            if (distanceBetweenPoints <= Radius) { return true; }
-            else { return false; }
-            // Concise version
-            //return ((point - Center).Length() <= Radius);
-        }
-
-        public bool Intersects(Circle other)
-        {
-            // "Wordy" version
-            Vector2 relativePosition = other.Center - this.Center;
-            float distanceBetweenCenters = relativePosition.Length();
-            if (distanceBetweenCenters <= this.Radius + other.Radius) { return true; }
-            else { return false; }
-            //return ((other.Center - Center).Length() < (other.Radius - Radius)); // Concise version
-        }
-
-        public bool Intersects(Rectangle rectangle)
-        {
-            Vector2 v = new Vector2(MathHelper.Clamp(_center.X, rectangle.Left, rectangle.Right),
-                                    MathHelper.Clamp(_center.Y, rectangle.Top, rectangle.Bottom));
-
-            Vector2 direction = _center - v;
-            float distanceSquared = direction.LengthSquared();
-
-            return ((distanceSquared > 0) && (distanceSquared < _radius * _radius));
-        }
-    }
-
     class Balle : Microsoft.Xna.Framework.DrawableGameComponent
     {
         private SpriteBatch _spriteBatch;
@@ -83,8 +30,6 @@ namespace CasseBrique
             set { _position = value; }
         }
         private Vector2 _position;
-
-        private Vector2 _positionInitiale;
 
         public Vector2 Direction
         {
@@ -109,15 +54,6 @@ namespace CasseBrique
         }
         private bool _isLaunched;
 
-        public Circle CollisionCircle
-        {
-            get
-            {
-                return _circle;
-            }
-        }
-        private Circle _circle;
-
         public Balle(Game game, Vector2 windowSize/*, SpriteBatch spriteBatch*/)
             : base(game)
         {
@@ -130,7 +66,7 @@ namespace CasseBrique
         {
             _isLaunched = false;
             _speed = 0.2f;
-            _direction = -Vector2.UnitY;//this.generateLaunchDirection();
+            _direction = this.generateLaunchDirection(); //-Vector2.UnitY;
             
             base.Initialize();
         }
@@ -140,27 +76,15 @@ namespace CasseBrique
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             _texture = Game.Content.Load<Texture2D>(@"images\balle-bleu");
 
-            _circle = new Circle(
-                new Vector2(
-                    _position.X + _texture.Width / 2,
-                    _position.Y + _texture.Height / 2
-                ),
-                _texture.Width / 2
-            );
-
             base.LoadContent();
         }
 
         public override void Update(GameTime gameTime)
         {
-            if(((CasseBrique)Game).CurrentGameState == CasseBrique.GameState.Playing)
+            if(((CasseBrique)Game)._currentGameState == CasseBrique.GameState.Playing)
             {
                 if (_isLaunched == true)
                 {
-                    //SoundEffectInstance soundInstMur = soundMur.CreateInstance();
-                    //soundInstMur.Volume = 0.6f; // Pour le son
-                    //soundInstMur.Play();
-
                     // Collision Gauche/Droite :
                     if ((_direction.X < 0 && _position.X <= 0) || (_direction.X > 0 && _position.X + _texture.Width >= _windowSize.X))
                     {
@@ -174,15 +98,14 @@ namespace CasseBrique
 
                     _position += _direction * _speed * (float)gameTime.ElapsedGameTime.TotalMilliseconds;
                 }
-                _circle.Center = new Vector2(_position.X + _texture.Width / 2,
-                    _position.Y + _texture.Height / 2);
+
                 base.Update(gameTime);
             }
         }
 
         public override void Draw(GameTime gameTime)
         {
-            if (((CasseBrique)Game).CurrentGameState == CasseBrique.GameState.Playing)
+            if (((CasseBrique)Game)._currentGameState == CasseBrique.GameState.Playing)
             {
                 _spriteBatch.Begin();
                 _spriteBatch.Draw(_texture, _position, Color.White);
