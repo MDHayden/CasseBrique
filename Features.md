@@ -12,18 +12,18 @@
     - Collision between ball and racquet (done).
     - 3 balls reserve (done).
     - Life indicators (done).
-    - End of the game :
-        - "Game over" / "Good Game".
-        - Back to menu after the player hit "Enter".
-        - Initialize a new game when clicking "Play" again.
+    - End of the game (done):
+        - "Game over" / "Good Game" (done).
+        - Back to menu after the player hit "Enter" (done).
+        - Initialize a new game when clicking "Play" again (done).
     - Collision between ball and bricks (done).
     - Ball bounce angle on the racquet (has minor issues).
 
 
 - Left to do :
-    - End of game.
-    - Menu to finish.
-    - Back to main menu when the player hit "Escape" in menu Options.
+    - Correct Menu Options Escape bug
+	- Add a music for the menu
+	- Change racquet size when a life is lost
 
 - Potential improvement :
     - Brick level : define number of collisions necessary to make the brick disappear.

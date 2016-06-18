@@ -10,7 +10,6 @@ namespace CasseBrique
 {
     class Bouton
     {
-     
         public Color Color
         {
             get { return _color; }
@@ -50,23 +49,18 @@ namespace CasseBrique
         public void Update(MouseState mouseState)
         {
             Rectangle mouseRectangle = new Rectangle(mouseState.X, mouseState.Y, 1, 1);
-            if(mouseRectangle.Intersects(_rectangle))
+            if (mouseRectangle.Intersects(_rectangle))
             {
-                if(_color.A == 255) down = false;
-                if(_color.A == 0) down = true;
-                if(down) _color.A += 3; else _color.A -= 3;
-                if(mouseState.LeftButton == ButtonState.Pressed) isClicked = true;
+                if (_color.A == 255) down = false;
+                if (_color.A == 0) down = true;
+                if (down) _color.A += 3; else _color.A -= 3;
+                if (mouseState.LeftButton == ButtonState.Pressed) isClicked = true;
             }
-            else if(_color.A < 255)
+            else if (_color.A < 255)
             {
                 _color.A += 3;
                 isClicked = false;
             }
         }
-
-        //public void Draw(SpriteBatch spriteBatch)
-        //{
-        //    spriteBatch.Draw(_texture, _rectangle, null, _color);
-        //}        
     }
 }

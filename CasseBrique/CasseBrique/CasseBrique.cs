@@ -25,10 +25,9 @@ namespace CasseBrique
 
         private const int NB_LIGNE_BRIQUE = 4;
         private const int NB_COLONNE_BRIQUE = 10;
-        private const int OFFSET = 25; // Offset entre les lignes et colonnes de briques
+        private const int OFFSET = 25; // Offset par rapport à la fenètre
         private float _briqueScale;
 
-        // Unitiliser une enumération ici :
         private enum BriqueColor
         {
             Black = 0, // Automatiquement les suivants vont être incrémentés
@@ -49,9 +48,6 @@ namespace CasseBrique
         private Texture2D _coeurTexture;
 
         private int _nbBriques = NB_LIGNE_BRIQUE * NB_COLONNE_BRIQUE;
-
-        //private KeyboardState _keyboardState;
-        //private MouseState _mouseState;
 
         private Menu _menu;
         private Balle _balle;
@@ -81,11 +77,10 @@ namespace CasseBrique
             MainMenu,
             Options,
             //Levels,
-            //Level1
+            //Level1,
             Playing,
-            Paused
+            //Paused
         }
-        //public GameState CurrentGameState = GameState.MainMenu;
         public GameState CurrentGameState = GameState.MainMenu;
 
         private Bouton _play;
@@ -101,26 +96,37 @@ namespace CasseBrique
         protected override void Initialize()
         {
             // Screen stuff
-            
             graphics.PreferredBackBufferWidth = screenWidth;
             graphics.PreferredBackBufferHeight = screenHeight;
             graphics.ApplyChanges();
 
             _windowSize.X = this.graphics.PreferredBackBufferWidth;
             _windowSize.Y = this.graphics.PreferredBackBufferHeight;
-
-            IsMouseVisible = true; // A enlever
-
             _mainFrame = new Rectangle(0, 0, (int)GraphicsDevice.Viewport.Width, (int)GraphicsDevice.Viewport.Height); //_windowSize.X, _windowSize.Y
 
             _menu = new Menu(this, _windowSize);
-            //this.InitGame();
             _nbBalles = 3;
             _score = 0;
             _balle = new Balle(this, _windowSize);
             _raquette = new Raquette(this, _windowSize);
 
+            // Affichage de la souris sur l'écran de menu
+            IsMouseVisible = true;
+
             base.Initialize();
+        }
+
+        private void InitGame()
+        {
+            // Affichage de la souris sur l'écran de menu
+            IsMouseVisible = true;
+            _nbBalles = 3;
+            _score = 0;
+
+            _balle.Initialize();
+            _raquette.Initialize();
+
+            this.GenerateBrickWall();
         }
 
         protected override void LoadContent()
@@ -141,12 +147,13 @@ namespace CasseBrique
             _exit = new Bouton(exitTexture, new Vector2(_windowSize.X / 2 - exitTexture.Width / 2, 450));
             // /!\ La gestion de ces boutons n'est pas bonne...
 
-            // TODO: use this.Content to load your game content here
+            // Fonts
             _scoreFont = Content.Load<SpriteFont>("ScoreFont");
             _timerFont = Content.Load<SpriteFont>("TimerFont");
             _globalFont = Content.Load<SpriteFont>("ScoreFont");
             _titleFont = Content.Load<SpriteFont>("TitleFont");
 
+            // Textures
             _briqueTextures[(int)BriqueColor.Black] = Content.Load<Texture2D>(@"images/briquenoire");
             _briqueTextures[(int)BriqueColor.Purple] = Content.Load<Texture2D>(@"images/briqueviolet");
             _briqueTextures[(int)BriqueColor.Red] = Content.Load<Texture2D>(@"images/briquerouge");
@@ -169,7 +176,6 @@ namespace CasseBrique
             _rebondBrique = Content.Load<SoundEffect>(@"sons\rebond-brique");
 
             _music = Content.Load<Song>(@"sons\song1-dream");
-            MediaPlayer.Play(_music);
             MediaPlayer.IsRepeating = true;
             MediaPlayer.Volume = 0.6f;
             this.GenerateBrickWall();
@@ -183,22 +189,43 @@ namespace CasseBrique
             {
                 case GameState.MainMenu:
                     MouseState mouseState = Mouse.GetState();
-                    if (_play.isClicked == true) CurrentGameState = GameState.Playing;
-                    if (_exit.isClicked == true) Exit();
-                    if (_options.isClicked == true) CurrentGameState = GameState.Options;
                     if (IsMouseVisible == false) IsMouseVisible = true;
 
                     // Mise à jour de la couleur des boutons si MouseOver
                     _play.Update(mouseState);
                     _options.Update(mouseState);
                     _exit.Update(mouseState);
+
+                    if (_play.isClicked == true)
+                    {
+                        CurrentGameState = GameState.Playing;
+                        MediaPlayer.Play(_music);
+                    }
+                    if (_exit.isClicked == true) Exit();
+                    if (_options.isClicked == true) CurrentGameState = GameState.Options;
                     break;
                 case GameState.Options:
+                    if (_keyboardState.IsKeyDown(Keys.Enter))
+                        CurrentGameState = GameState.MainMenu;
                     break;
                 case GameState.Playing:
+                    // Si la sourie est visible, la cacher
                     if (IsMouseVisible == true) IsMouseVisible = false;
-                    if (!_balle.Launched)
+
+                    // Quit the application
+                    if (_keyboardState.IsKeyDown(Keys.Escape)) Exit(); //CurrentGameState = GameState.Paused;
+
+                    // Partie finie (PERDUE ou GAGNEE)
+                    if (_nbBalles == 0 || _nbBriques == 0)
                     {
+                        // Retour au menu si Entrée
+                        if (_keyboardState.IsKeyDown(Keys.Enter))
+                        {
+                            MediaPlayer.Stop();
+                            CurrentGameState = GameState.MainMenu;
+                            this.InitGame();
+                        }
+                    } else if (!_balle.Launched) {
                         _raquette.Scale = 1f;
                         _balle.Position = new Vector2(_raquette.Position.X + _raquette.Texture.Width / 2 - _balle.Texture.Width / 2, _raquette.Position.Y - _balle.Texture.Height);
                         if(_keyboardState.IsKeyDown(Keys.Space))
@@ -211,12 +238,7 @@ namespace CasseBrique
                         this.CheckIfBallOut();
                         this.CheckIfCollisionRaquette();
                         this.CheckIfCollisionBrique(gameTime);
-                        if (_nbBriques == 0)
-                            _menu.IsGamePaused = true;
                     }
-                    if (_keyboardState.IsKeyDown(Keys.Escape))
-                        //CurrentGameState = GameState.Paused;
-                        Exit();
                     break;
             }
 
@@ -254,6 +276,8 @@ namespace CasseBrique
                     Vector2 menuTitleSize = _titleFont.MeasureString(menuTitle);
                     Vector2 menuTitlePosition = new Vector2(_windowSize.X / 2 - menuTitleSize.X / 2, 20);
                     spriteBatch.DrawString(_titleFont, menuTitle, menuTitlePosition, Color.White);
+
+                    this.DrawString("Appuyez sur \"Entrer\" pour revenir au menu", _globalFont, new Vector2(_windowSize.X / 2, _windowSize.Y - 40), Color.Black);
                     break;
                 case GameState.Playing:
                     // Affichage du fond d'écran
@@ -286,21 +310,14 @@ namespace CasseBrique
                     }
 
                     // Game Over
-                    if (_nbBalles == 0)
-                    {
-                        String message = "Game Over!";
-                        Vector2 gameOverSize = _globalFont.MeasureString("Game Over!");
-                        Vector2 gameOverPosition = new Vector2(_windowSize.X / 2 - gameOverSize.X / 2, _windowSize.Y / 2 - gameOverSize.Y / 2);
-                        spriteBatch.DrawString(_globalFont, "Game Over!", gameOverPosition, Color.Red);
-
-                        CurrentGameState = GameState.MainMenu;
+                    if (_nbBalles == 0) {
+                        this.DrawString("Game Over", _titleFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2), Color.Red);
+                        this.DrawString("Appuyez sur \"Entrer\" pour revenir au menu", _globalFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2 + 50), Color.Black);
                     }
-                    else if (_nbBriques == 0)
-                    {
-                        Vector2 bravoSize = _globalFont.MeasureString("Bravo!");
-                        Vector2 bravoPosition = new Vector2(_windowSize.X / 2 - bravoSize.X / 2, _windowSize.Y / 2 - bravoSize.Y / 2);
-                        spriteBatch.DrawString(_globalFont, "Bravo!", bravoPosition, Color.White);
-                        CurrentGameState = GameState.MainMenu;
+                    // Partie Gagnée
+                    else if (_nbBriques == 0) {
+                        this.DrawString("Niveau terminé", _titleFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2), Color.Green);
+                        this.DrawString("Appuyez sur \"Entrer\" pour revenir au menu", _globalFont, new Vector2(_windowSize.X / 2, _windowSize.Y / 2 + 50), Color.Black);
                     }
                     break;
             }
@@ -315,18 +332,12 @@ namespace CasseBrique
             {
                 _nbBalles--;
                 _balle.Launched = false;
-                if(!(_nbBalles == 0))
+                // S'il reste des balles, on réinitialise la balle
+                if(_nbBalles != 0)
                 {
                     _score -= 50;
                     _balle.Initialize();
                     _raquette.Initialize();
-                }
-                else
-                {
-                    _menu.IsGamePaused = true;
-                    // Fin jeu : "Game over" + Retour menu après petite tempo
-                    //// On réinitialise car c'est possible, mais penser à la faire au bon endroit
-                    //Initialize();
                 }
             }
         }
@@ -339,28 +350,8 @@ namespace CasseBrique
                 _rebondRaquette.Play();
 
                 //_raquette.Scale -= 0.005f;
-                //Vector vectorRaquette = new Vector(_raquette.CollisionRectangle.X, _raquette.CollisionRectangle.Y);
-                //Vector vectorBalle = new Vector(_balle.Direction.X, _balle.Direction.Y);
-                //Double angleBetween = Vector.AngleBetween(vectorRaquette, vectorBalle);
-
-                //float radianAngle = (float)Math.Atan2(-_balle.Direction.X, -_balle.Direction.Y) * (180 / (float)Math.PI);
-                ////_balle.Direction = new Vector2((float)Math.Cos(radianAngle), (float)Math.Sin(radianAngle));
-
-                //var x = Math.Cos(radianAngle * Math.PI / 180);
-                //var y = - Math.Sin(radianAngle * Math.PI / 180);
-                //_balle.Direction = new Vector2((float)x, (float)y);
-
 
                 _balle.Direction = CalculateBounceDirection(_balle.Position, _raquette.CollisionRectangle);
-                
-                //if (_raquette.RelativePosition(_balle.Position) < 0)
-                //    _balle.Direction = new Vector2(-1, -1);
-                //else if (_raquette.RelativePosition(_balle.Position) > 0)
-                //    _balle.Direction = new Vector2(1, -1);
-                //else
-                //    _balle.Direction = new Vector2(_balle.Direction.X, -_balle.Direction.Y);
-
-
                 
                 if (_balle.Speed < Balle.MAX_SPEED)
                     _balle.Speed += 0.03f;
@@ -458,6 +449,13 @@ namespace CasseBrique
 
             // /!\ mauvais ratio => bounce angle entre 20° et 160° mais lorsque la balle 
             // arrive au moilieu de la raquette elle part dans un angle < 90°...
+        }
+
+        private void DrawString(String text, SpriteFont font, Vector2 relativePosition, Color color)
+        {
+            Vector2 textSize = font.MeasureString(text);
+            Vector2 textPosition = new Vector2(relativePosition.X - textSize.X / 2, relativePosition.Y - textSize.Y / 2);
+            spriteBatch.DrawString(font, text, textPosition, color);
         }
     }
 }
